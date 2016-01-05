@@ -20,8 +20,8 @@ You should see some output as seen below, which tells you where the JAR is:
 Create a `jira.properties` file in the location of the JAR.
 This needs to contain the following properties:
   
-  jiraurl=https://your-jira.com
-  jirausername=your_jira_username
-  jirapwd=your_jira_password
-  jiraproject=Key_to_a_JIRA_project
+      jiraurl=https://your-jira.com
+      jirausername=your_jira_username
+      jirapwd=your_jira_password
+      jiraproject=Key_to_a_JIRA_project
 
