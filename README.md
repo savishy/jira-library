@@ -1,5 +1,5 @@
 # jira-library
-A user-friendly JIRA Client
+A user-friendly JIRA Client library. 
 
 ## Instructions (Build from source)
 
@@ -25,3 +25,5 @@ This needs to contain the following properties:
       jirapwd=your_jira_password
       jiraproject=Key_to_a_JIRA_project
 
+## Examples 
+See JiraCmd.jar.
