@@ -10,6 +10,10 @@
 	<name>jiralib</name>
 	<url>http://maven.apache.org</url>
 
+	<!-- USAGE: mvn clean compile assembly:single .... will create a runnable 
+		JAR (JiraCmd is main class) mvn deploy .... will deploy to github as maven 
+		repository. mvn install .... will build,test and if tests pass, create JAR 
+		(not runnable). -->
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- Ref: http://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github 
@@ -19,7 +23,6 @@
 	</properties>
 
 	<dependencies>
-		<!-- JUnit for testing. Not used, should be removed. -->
 		<!-- JIRA related libraries. -->
 		<dependency>
 			<groupId>com.atlassian.jira</groupId>
@@ -79,9 +82,7 @@
 	<build>
 		<plugins>
 			<plugin>
-				<!-- Configure site-maven-plugin to deploy to your maven repo.
-				ref: http://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github 
-				-->
+				<!-- Configure site-maven-plugin to deploy to your maven repo. ref: http://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github -->
 				<groupId>com.github.github</groupId>
 				<artifactId>site-maven-plugin</artifactId>
 				<version>0.12</version>
@@ -104,6 +105,28 @@
 							<goal>site</goal>
 						</goals>
 						<phase>deploy</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- http://stackoverflow.com/questions/574594/how-can-i-create-an-executable-jar-with-dependencies-using-maven -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>com.vish.jiralib.JiraCmd</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
