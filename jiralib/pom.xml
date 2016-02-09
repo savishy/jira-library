@@ -80,7 +80,16 @@
 		</repository>
 	</distributionManagement>
 	<build>
-		<plugins>
+	  <plugins>
+       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
 			<plugin>
 				<!-- Configure site-maven-plugin to deploy to your maven repo. ref: http://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github -->
 				<groupId>com.github.github</groupId>
