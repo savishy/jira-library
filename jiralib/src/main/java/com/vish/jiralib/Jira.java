@@ -43,11 +43,11 @@ public class Jira {
 	boolean DEBUG = true;
 	/** Jira Rest Client */
 	public static JiraRestClient restClient;
-	/** valid issuetypes */
+	/** a list of valid issuetypes for the project. Is updated by constructor. */
 	public List<IssueType> issueTypes = new ArrayList<IssueType>();
-	/** valid components */
+	/** a list of valid components for the project. Is updated by constructor. */
 	public List<BasicComponent> components = new ArrayList<BasicComponent>();
-	/** current project */
+	/** the current project. set by constructor. */
 	public Project project;
 	
 	/**
@@ -290,13 +290,13 @@ public class Jira {
 	
 	/**
 	 * given transition name, get its ID.
-	 * This method will automatically fail if the transition is invalid. 
+	 * This method will automatically fail if the transition is invalid. Therefore it serves as a way to validate transitions.
 	 * @param issue
 	 * @param name
 	 * @return
 	 * @throws Exception
 	 */
-	private int getTransitionIdByName(Issue issue,String name) throws Exception {
+	public int getTransitionIdByName(Issue issue,String name) throws Exception {
 		if (DEBUG) System.out.println("getTransitionIdByName: transition: " + name);
 		Iterator<Transition> iter = restClient.getIssueClient().getTransitions(issue).get().iterator();
 		while (iter.hasNext()) {
