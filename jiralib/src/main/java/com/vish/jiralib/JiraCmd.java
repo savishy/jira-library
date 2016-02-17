@@ -34,7 +34,7 @@ public class JiraCmd {
 		
 		//parse input args
 		parseArgs(args);
-		jira = new Jira(jiraurl, jirausername, jirapassword, jiraproject);
+		jira = new Jira(jiraurl, jirausername, jirapassword, jiraproject, true);
 	}
 
 	private void bulkAction(String searchInput, String targetState) throws Exception {
