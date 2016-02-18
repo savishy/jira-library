@@ -2,7 +2,6 @@ package com.vish.jiralib;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -13,8 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.FileEntity;
@@ -24,20 +21,27 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 import com.atlassian.httpclient.apache.httpcomponents.MultiPartEntityBuilder;
+import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.BasicComponent;
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.BasicStatus;
+import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Filter;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.IssueLink;
+import com.atlassian.jira.rest.client.api.domain.IssueLinkType;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.Transition;
+import com.atlassian.jira.rest.client.api.domain.Visibility;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import com.atlassian.jira.rest.client.api.domain.input.LinkIssuesInput;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 import com.atlassian.jira.rest.client.api.domain.util.ErrorCollection;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
@@ -62,6 +66,8 @@ public class Jira {
 	public List<IssueType> issueTypes = new ArrayList<IssueType>();
 	/** a list of valid components for the project. Is updated by constructor. */
 	public List<BasicComponent> components = new ArrayList<BasicComponent>();
+	/** a list of Strings containing valid issue link names. is updated by constructor. */
+	public List<String> issueLinkTypes = new ArrayList<String>();
 	/** the current project. set by constructor. */
 	public Project project;
 	/** jira base url */
@@ -92,6 +98,7 @@ public class Jira {
 			//update issuetypes and components
 			updateProjectComponents();
 			updateProjectIssueTypes();
+			updateIssueLinkTypes();
 		} catch (URISyntaxException e) {
 			System.err.println("ERR:" + e.getMessage());
 		}
@@ -142,7 +149,7 @@ public class Jira {
 			issueFields.put("description",issue.getDescription());
 			BasicStatus status = issue.getStatus();
 			issueFields.put("status",status.toString());
-			System.out.println(issueFields.toString());
+			if (DEBUG) System.out.println(issueFields.toString());
 			return issueFields;
 		} catch (RestClientException e) {
 			parseJiraRestError(e.getErrorCollections());
@@ -222,6 +229,18 @@ public class Jira {
 		Iterator<BasicComponent> iter = project.getComponents().iterator();
 		while (iter.hasNext()) {
 			components.add(iter.next());
+		}
+	}
+	
+	/**
+	 * Private method. Called by constructor.
+	 * @throws Exception
+	 */
+	private void updateIssueLinkTypes() throws Exception {
+		Iterator<IssuelinksType> iter = restClient.getMetadataClient().getIssueLinkTypes().claim().iterator();
+		while (iter.hasNext()) {
+			IssuelinksType issueLinksType = iter.next();
+			issueLinkTypes.add(issueLinksType.getName());
 		}
 	}
 
@@ -452,5 +471,69 @@ public class Jira {
 			System.err.println("file not attached: status code: " + response.getStatusLine().getStatusCode() + 
 					"\nResponse: " + response.toString());
 		}
+	}
+	
+	/**
+	 * <ul>
+	 * <li>Check if desired link is present in {@link #issueLinkTypes}. If no, throw exception.</li>
+	 * </ul>
+	 * @param sourceIssue
+	 * @param targetIssue
+	 * @param linkType
+	 * @throws Exception
+	 */
+	private void validateIssueLink(String linkType) throws Exception {
+		
+		//first check if desired link type is valid. 
+		if (!issueLinkTypes.contains(linkType)) 
+			throw new Exception ("link type: " + linkType + 
+					" is not present in list of issue links: " +
+					issueLinkTypes.toString()
+				);
+	}
+	
+	/**
+	 * creates a {@link Comment} object with default visibility.
+	 * @param comment
+	 * @return
+	 */
+	private Comment createCommentFromString(String comment) {
+		return Comment.createWithRoleLevel(comment, null);
+	}
+	
+	/**
+	 * get existing links for the source issue. check if link already present
+	 * @param sourceIssue 
+	 * @param targetIssue
+	 * @return
+	 */
+	private boolean areIssuesLinked(Issue sourceIssue, Issue targetIssue) {
+		Iterator<IssueLink> iter = sourceIssue.getIssueLinks().iterator();
+		while (iter.hasNext()) {
+			if (iter.next().getTargetIssueKey().equals(targetIssue.getKey()))
+				return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Links a source issue to target issue with a link type. 
+	 * @param sourceIssue
+	 * @param targetIssue
+	 * @param linkType
+	 * @param comment
+	 * @throws Exception
+	 */
+	public void linkIssueToIssue(String sourceIssue, String targetIssue, String linkType, String comment) throws Exception {
+		validateIssueLink(linkType);
+		if (areIssuesLinked(getIssueObjectByName(sourceIssue),getIssueObjectByName(targetIssue))) {
+			System.out.println("WARNING: skipping issue link creation; "
+					+ "link already present for " + sourceIssue + "," + targetIssue);
+			return;
+		}
+		System.out.print("link: " + sourceIssue + " > " + linkType + " > " + targetIssue + ", comment: " + comment);
+		LinkIssuesInput linkIssuesInput = new LinkIssuesInput(sourceIssue, targetIssue, linkType);
+//		LinkIssuesInput linkIssuesInput = new LinkIssuesInput(sourceIssue, targetIssue, linkType, createCommentFromString(comment));
+		restClient.getIssueClient().linkIssue(linkIssuesInput).claim();
 	}
 }
