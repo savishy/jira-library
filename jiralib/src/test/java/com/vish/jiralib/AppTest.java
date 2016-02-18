@@ -29,7 +29,7 @@ public class AppTest {
 		if (jiraurl == null || jirausername == null || jirapassword == null)
 			throw new Exception ("tests require a jira.properties file with the following properties: jiraurl, jirausername, jirapwd, jiraproject");
 		
-		jira = new Jira(jiraurl, jirausername, jirapassword, jiraproject);
+		jira = new Jira(jiraurl, jirausername, jirapassword, jiraproject,false);
 	}
 	
 	@Test(enabled=true,priority=1,description="check count of projects")
