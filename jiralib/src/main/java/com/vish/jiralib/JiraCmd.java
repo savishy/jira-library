@@ -17,11 +17,12 @@ import bsh.StringUtil;
 public class JiraCmd {
 
 	private Jira jira;
-	private String jiraproject, searchInput, targetState;
+	private String jiraproject, searchInput, issueKey, commentString, targetState;
 	private actions action;
 	private static enum actions {
 		bulk,
-		find
+		find,
+		comment
 	}
 	public JiraCmd(String[] args) throws Exception {
 		Properties props = new Properties();
@@ -115,8 +116,17 @@ public class JiraCmd {
 			if (args.length != 3) { usage(); throw new Exception ("incorrect argument count!"); } 
 			searchInput = args[2];
 			break;
+		case comment:
+			if (args.length != 4) { usage(); throw new Exception ("incorrect argument count!"); }
+			issueKey = args[2];
+			commentString = args[3];
+			break;
 		default: throw new Exception (action + " unsupported!");
 		}	
+	}
+	
+	private void commentAction(String issueKey,String comment) throws Exception {
+		jira.commentOnIssue(issueKey, comment);
 	}
 	
 	private void doAction() throws Exception {
@@ -125,6 +135,8 @@ public class JiraCmd {
 			bulkAction(searchInput,targetState); break;
 		case find:
 			findAction(searchInput); break;
+		case comment:
+			commentAction(issueKey,commentString); break;
 		default: throw new Exception (action + " unsupported!");
 		}
 	}

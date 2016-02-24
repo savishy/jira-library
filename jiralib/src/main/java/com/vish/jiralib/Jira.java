@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -36,6 +37,7 @@ import com.atlassian.jira.rest.client.api.domain.IssueLinkType;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.atlassian.jira.rest.client.api.domain.ProjectRole;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.Transition;
 import com.atlassian.jira.rest.client.api.domain.Visibility;
@@ -66,6 +68,7 @@ public class Jira {
 	public List<IssueType> issueTypes = new ArrayList<IssueType>();
 	/** a list of valid components for the project. Is updated by constructor. */
 	public List<BasicComponent> components = new ArrayList<BasicComponent>();
+
 	/** a list of Strings containing valid issue link names. is updated by constructor. */
 	public List<String> issueLinkTypes = new ArrayList<String>();
 	/** the current project. set by constructor. */
@@ -91,6 +94,7 @@ public class Jira {
 		this.url = url;
 		this.DEBUG = debug;
 		try {
+			System.out.println("project: " + proj);
 			jiraServerUri = new URI(this.url);
 			restClient = factory.createWithBasicHttpAuthentication(jiraServerUri, u, p);
 			//initialize current project
@@ -231,6 +235,7 @@ public class Jira {
 			components.add(iter.next());
 		}
 	}
+	
 	
 	/**
 	 * Private method. Called by constructor.
@@ -492,13 +497,15 @@ public class Jira {
 				);
 	}
 	
+	
+	
 	/**
 	 * creates a {@link Comment} object with default visibility.
 	 * @param comment
 	 * @return
 	 */
-	private Comment createCommentFromString(String comment) {
-		return Comment.createWithRoleLevel(comment, null);
+	private Comment createCommentFromString(String comment, String roleLevel) {
+		return Comment.createWithRoleLevel(comment, roleLevel);
 	}
 	
 	/**
@@ -514,6 +521,19 @@ public class Jira {
 				return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * add a comment on an existing issue. The comment is made with a default visibility of "Users"
+	 * @param issueKey
+	 * @param comment
+	 * @throws Exception
+	 */
+	public void commentOnIssue(String issueKey, String comment) throws Exception {
+		System.out.println("comment: " + issueKey + ": " + comment);
+		Comment c = createCommentFromString(comment,"Users");
+		URI commentURI = getIssueObjectByName(issueKey).getCommentsUri();
+		restClient.getIssueClient().addComment(commentURI, c).claim();	
 	}
 	
 	/**
@@ -533,7 +553,7 @@ public class Jira {
 		}
 		System.out.print("link: " + sourceIssue + " > " + linkType + " > " + targetIssue + ", comment: " + comment);
 		LinkIssuesInput linkIssuesInput = new LinkIssuesInput(sourceIssue, targetIssue, linkType);
-//		LinkIssuesInput linkIssuesInput = new LinkIssuesInput(sourceIssue, targetIssue, linkType, createCommentFromString(comment));
 		restClient.getIssueClient().linkIssue(linkIssuesInput).claim();
+		commentOnIssue(sourceIssue, comment);
 	}
 }
