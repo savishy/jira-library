@@ -22,7 +22,7 @@ public class JiraCmd {
 	private static enum actions {
 		bulk,
 		find,
-		comment
+		comment, get
 	}
 	public JiraCmd(String[] args) throws Exception {
 		Properties props = new Properties();
@@ -121,12 +121,20 @@ public class JiraCmd {
 			issueKey = args[2];
 			commentString = args[3];
 			break;
+		case get:
+			if (args.length != 3)  { usage(); throw new Exception ("incorrect argument count!"); }
+			issueKey = args[2];
+			break;
 		default: throw new Exception (action + " unsupported!");
 		}	
 	}
 	
 	private void commentAction(String issueKey,String comment) throws Exception {
 		jira.commentOnIssue(issueKey, comment);
+	}
+	
+	private void getIssueAction(String issueKey) throws Exception {
+		jira.getIssueLinks(issueKey, null,null);
 	}
 	
 	private void doAction() throws Exception {
@@ -137,6 +145,8 @@ public class JiraCmd {
 			findAction(searchInput); break;
 		case comment:
 			commentAction(issueKey,commentString); break;
+		case get:
+			getIssueAction(issueKey); break;
 		default: throw new Exception (action + " unsupported!");
 		}
 	}
