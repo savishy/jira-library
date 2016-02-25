@@ -531,7 +531,7 @@ public class Jira {
 	 * @author icelero
 	 *
 	 */
-	private class Link {
+	public class Link {
 		private String targetIssueKey;
 		private IssueLinkType linkType;
 		private Direction direction;
@@ -547,13 +547,12 @@ public class Jira {
 	 * return a list of info about the links that an issue has to another. 
 	 * 
 	 * @param srcIssue
-	 * @param t optionally you can filter by IssueLinkType. So setting this parameter to a valid {@link IssueLinkType} object will return 
-	 * only those objects that match that issue link type. 
+	 * @param t optionally you can filter by IssueLinkType. type a valid name e.g. duplicate. Case insensitive.  
 	 * @param d optional filter by Issue Direction.
 	 * @return a List of {@link Link} objects representing issue links.
 	 * @throws Exception
 	 */
-	public List<Link> getIssueLinks(String srcIssue, IssueLinkType t, Direction d) throws Exception {
+	public List<Link> getIssueLinks(String srcIssue, String t, Direction d) throws Exception {
 		Issue sourceIssue = getIssueObjectByName(srcIssue);
 		List<Link> retVal = new ArrayList<Link>();
 		Iterator<IssueLink> iter = sourceIssue.getIssueLinks().iterator();
@@ -567,11 +566,11 @@ public class Jira {
 			if (t == null && d == null) toAdd = true;
 			//if both filters specified, check each filter and add to list.
 			else if (t != null && d != null) {
-				if (t.equals(type) && d.equals(direction)) 
+				if (t.toLowerCase().equals(type.getName().toLowerCase()) && d.equals(direction)) 
 					toAdd = true;
 			}
 			//else if either of filters are non-null, check and add.
-			else if (t != null && t.equals(type)) toAdd = true;
+			else if (t != null && t.toLowerCase().equals(type.getName().toLowerCase())) toAdd = true;
 			else if (d != null && d.equals(direction)) toAdd = true;
 			if (toAdd) retVal.add(new Link(link.getTargetIssueKey(), type, direction));
 		}
